@@ -315,42 +315,42 @@ interface TitleScreenProps {
 }
 
 const TitleScreen = ({ meta, difficulty, setDifficulty, onStart }: TitleScreenProps) => (
-  <div className="relative z-10 w-full max-w-2xl flex flex-col items-center gap-8 py-10">
+  <div className="relative z-10 w-full max-w-2xl max-h-full overflow-y-auto flex flex-col items-center gap-3 sm:gap-6 py-2 px-1">
     <motion.div
       initial={{ y: -30, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      className="flex flex-col items-center gap-2"
+      className="flex flex-col items-center gap-1 shrink-0"
     >
       <motion.div
         animate={{ y: [-4, 4, -4], rotate: [-3, 3, -3] }}
         transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-        className="w-24 h-24 scale-125"
+        className="w-14 h-14 sm:w-20 sm:h-20"
       >
         <TurtleSprite isInShell={false} isDead={false} row={0} col={0} />
       </motion.div>
-      <h1 className="text-5xl sm:text-6xl font-black uppercase italic tracking-tighter text-white drop-shadow-[3px_3px_0px_rgba(74,55,40,1)]">
+      <h1 className="text-3xl sm:text-5xl font-black uppercase italic tracking-tighter text-white drop-shadow-[3px_3px_0px_rgba(74,55,40,1)]">
         Turtle Rescue
       </h1>
-      <p className="text-white/80 font-bold uppercase tracking-widest text-xs">
+      <p className="text-white/80 font-bold uppercase tracking-widest text-[10px] sm:text-xs">
         Guide every hatchling home
       </p>
     </motion.div>
 
-    <div className="w-full bg-white/85 backdrop-blur-md rounded-3xl border-2 border-[#4a3728] shadow-[6px_6px_0px_0px_rgba(74,55,40,1)] p-6 flex flex-col gap-6">
+    <div className="w-full bg-white/85 backdrop-blur-md rounded-3xl border-2 border-[#4a3728] shadow-[6px_6px_0px_0px_rgba(74,55,40,1)] p-3 sm:p-6 flex flex-col gap-3 sm:gap-5">
       <div className="flex items-center justify-between">
-        <span className="font-black uppercase italic tracking-tight text-lg">Your Treasure</span>
+        <span className="font-black uppercase italic tracking-tight text-base sm:text-lg">Your Treasure</span>
         <CoinBadge coins={meta.coins} />
       </div>
 
       <div>
-        <p className="text-[11px] font-black uppercase tracking-widest opacity-50 mb-2">Difficulty</p>
+        <p className="text-[11px] font-black uppercase tracking-widest opacity-50 mb-1.5">Difficulty</p>
         <div className="grid grid-cols-3 gap-2">
           {(Object.keys(DIFFICULTIES) as Difficulty[]).map((d) => (
             <button
               key={d}
               onClick={() => setDifficulty(d)}
               className={`
-                py-3 rounded-xl font-black uppercase text-sm transition-all border-2
+                py-2 sm:py-3 rounded-xl font-black uppercase text-xs sm:text-sm transition-all border-2
                 ${difficulty === d
                   ? 'bg-[#4a3728] text-white border-[#4a3728] shadow-lg scale-[1.03]'
                   : 'bg-white text-[#4a3728] border-[#4a3728]/30 hover:border-[#4a3728]'}
@@ -360,12 +360,12 @@ const TitleScreen = ({ meta, difficulty, setDifficulty, onStart }: TitleScreenPr
             </button>
           ))}
         </div>
-        <p className="text-xs opacity-60 mt-2 min-h-[1.5rem]">{DIFFICULTIES[difficulty].description}</p>
+        <p className="text-[11px] sm:text-xs opacity-60 mt-1.5">{DIFFICULTIES[difficulty].description}</p>
       </div>
 
       <div>
-        <p className="text-[11px] font-black uppercase tracking-widest opacity-50 mb-2">Choose Level</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <p className="text-[11px] font-black uppercase tracking-widest opacity-50 mb-1.5">Choose Level</p>
+        <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
           {LEVELS.map((level) => {
             const locked = level.id > meta.unlockedLevel;
             return (
@@ -374,18 +374,18 @@ const TitleScreen = ({ meta, difficulty, setDifficulty, onStart }: TitleScreenPr
                 onClick={() => !locked && onStart(level.id)}
                 disabled={locked}
                 className={`
-                  text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3
+                  text-left p-1.5 sm:p-2.5 rounded-xl border-2 transition-all flex items-center gap-2
                   ${locked
                     ? 'opacity-40 border-[#4a3728]/20 cursor-not-allowed'
                     : 'border-[#4a3728]/30 hover:border-[#4a3728] hover:bg-[#4a3728]/5 hover:scale-[1.01]'}
                 `}
               >
-                <div className="w-9 h-9 shrink-0 rounded-lg bg-[#2e8b57] text-white flex items-center justify-center font-black">
-                  {locked ? <Lock size={16} /> : level.id}
+                <div className="w-7 h-7 sm:w-9 sm:h-9 shrink-0 rounded-lg bg-[#2e8b57] text-white flex items-center justify-center font-black text-sm">
+                  {locked ? <Lock size={14} /> : level.id}
                 </div>
                 <div className="min-w-0">
-                  <p className="font-black uppercase italic text-sm leading-tight">{level.name}</p>
-                  <p className="text-[11px] opacity-60 truncate">{level.tagline}</p>
+                  <p className="font-black uppercase italic text-[11px] sm:text-sm leading-tight truncate">{level.name}</p>
+                  <p className="text-[10px] opacity-60 truncate hidden sm:block">{level.tagline}</p>
                 </div>
               </button>
             );
@@ -395,9 +395,9 @@ const TitleScreen = ({ meta, difficulty, setDifficulty, onStart }: TitleScreenPr
 
       <button
         onClick={() => onStart(1)}
-        className="w-full bg-[#2e8b57] text-white py-4 rounded-2xl font-black uppercase tracking-widest text-lg hover:bg-[#1e5d3a] transition-all shadow-[0_5px_0_0_#1e5d3a] active:shadow-none active:translate-y-1 flex items-center justify-center gap-2"
+        className="w-full bg-[#2e8b57] text-white py-3 sm:py-4 rounded-2xl font-black uppercase tracking-widest text-base sm:text-lg hover:bg-[#1e5d3a] transition-all shadow-[0_5px_0_0_#1e5d3a] active:shadow-none active:translate-y-1 flex items-center justify-center gap-2"
       >
-        <Play size={22} /> Start Rescue
+        <Play size={20} /> Start Rescue
       </button>
     </div>
   </div>
@@ -664,7 +664,7 @@ export default function App() {
   return (
     <div
       className={`
-        min-h-screen relative font-sans text-[#4a3728] selection:bg-[#d2b48c] selection:text-white overflow-hidden flex flex-col items-center justify-center p-4
+        h-dvh relative font-sans text-[#4a3728] selection:bg-[#d2b48c] selection:text-white overflow-hidden flex flex-col items-center justify-center p-2 sm:p-4
         ${activeTool === 'leaf' || activeTool === 'decoy' ? 'cursor-crosshair' : ''}
         ${activeTool === 'shell' || activeTool === 'sprint' ? 'cursor-help' : ''}
       `}
@@ -682,11 +682,11 @@ export default function App() {
       )}
 
       {game && level && (
-        <div className="relative z-10 w-full max-w-4xl flex flex-col gap-4">
+        <div className="relative z-10 w-full max-w-4xl h-full min-h-0 flex flex-col gap-1.5 sm:gap-3">
           {/* Header / HUD */}
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-white/80 backdrop-blur-md p-3 sm:p-4 rounded-2xl border-2 border-[#4a3728] shadow-[4px_4px_0px_0px_rgba(74,55,40,1)]">
+          <div className="shrink-0 flex flex-wrap items-center justify-between gap-1.5 sm:gap-3 bg-white/80 backdrop-blur-md p-1.5 sm:p-3 rounded-2xl border-2 border-[#4a3728] shadow-[4px_4px_0px_0px_rgba(74,55,40,1)]">
             {/* Power toolbar */}
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-1 sm:gap-2 flex-wrap">
               {unlockedPowers.map((p) => {
                 const count = game.powers[p];
                 const isToggle = p !== 'freeze';
@@ -709,7 +709,7 @@ export default function App() {
                     }
                     title={POWERS[p].description}
                     className={`
-                      w-12 h-12 sm:w-14 sm:h-14 rounded-xl transition-all flex flex-col items-center justify-center disabled:opacity-40
+                      w-10 h-10 sm:w-13 sm:h-13 rounded-xl transition-all flex flex-col items-center justify-center disabled:opacity-40
                       ${isToggle && isActive ? POWER_COLORS[p].active : POWER_COLORS[p].idle}
                     `}
                   >
@@ -724,7 +724,7 @@ export default function App() {
                 onClick={() => dispatch({ type: 'wait' })}
                 disabled={game.status !== 'playing'}
                 title="Let a turn pass — predators move, turtles hold still"
-                className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl transition-all flex flex-col items-center justify-center disabled:opacity-40 bg-white text-[#4a3728] border-2 border-[#4a3728]/40 hover:bg-[#4a3728] hover:text-white"
+                className="w-10 h-10 sm:w-13 sm:h-13 rounded-xl transition-all flex flex-col items-center justify-center disabled:opacity-40 bg-white text-[#4a3728] border-2 border-[#4a3728]/40 hover:bg-[#4a3728] hover:text-white"
               >
                 <Hourglass size={18} />
                 <span className="text-[9px] font-black mt-0.5 uppercase">Wait</span>
@@ -732,8 +732,8 @@ export default function App() {
             </div>
 
             {/* Title / status */}
-            <div className="flex-1 flex flex-col items-center min-w-[140px]">
-              <h1 className="text-lg sm:text-2xl font-black uppercase italic tracking-tighter text-[#4a3728] leading-none text-center">
+            <div className="flex-1 flex flex-col items-center min-w-[110px]">
+              <h1 className="text-sm sm:text-xl font-black uppercase italic tracking-tighter text-[#4a3728] leading-none text-center">
                 {level.id}. {level.name}
               </h1>
               <div className="flex gap-3 text-[10px] font-bold uppercase opacity-60 mt-1">
@@ -749,37 +749,37 @@ export default function App() {
             </div>
 
             {/* Right controls */}
-            <div className="flex gap-2 items-center">
+            <div className="flex gap-1 sm:gap-2 items-center">
               <button data-testid="shop-button" onClick={() => setShowShop(true)} className="hover:scale-105 transition-transform">
                 <CoinBadge coins={meta.coins} />
               </button>
               <button
                 onClick={() => setShowTutorial(true)}
-                className="w-10 h-10 rounded-full bg-[#4a3728]/10 flex items-center justify-center hover:bg-[#4a3728] hover:text-white transition-all"
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#4a3728]/10 flex items-center justify-center hover:bg-[#4a3728] hover:text-white transition-all"
               >
-                <Info size={18} />
+                <Info size={16} />
               </button>
               <button
                 onClick={() => startLevel(game.levelId, carriedAtLevelStart)}
                 title="Restart level"
-                className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-red-600 border-2 border-red-200 hover:bg-red-600 hover:text-white transition-all"
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-red-50 flex items-center justify-center text-red-600 border-2 border-red-200 hover:bg-red-600 hover:text-white transition-all"
               >
-                <RotateCcw size={18} />
+                <RotateCcw size={16} />
               </button>
               <button
                 onClick={() => setGame(null)}
                 title="Back to title"
-                className="w-10 h-10 rounded-full bg-[#4a3728]/10 flex items-center justify-center hover:bg-[#4a3728] hover:text-white transition-all"
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#4a3728]/10 flex items-center justify-center hover:bg-[#4a3728] hover:text-white transition-all"
               >
-                <Home size={18} />
+                <Home size={16} />
               </button>
             </div>
           </div>
 
-          {/* Game Area */}
-          <div className="flex flex-col gap-4 items-center">
-            <div className="w-full max-w-2xl flex flex-col gap-4">
-              <div className="relative aspect-[5/6] bg-transparent overflow-hidden rounded-2xl">
+          {/* Game Area — board scales to the remaining viewport height */}
+          <div className="flex-1 min-h-0 flex flex-col items-center w-full">
+            <div className="h-full min-h-0 w-full flex flex-col items-center gap-1 sm:gap-2">
+              <div className="relative flex-1 min-h-0 aspect-[5/6] max-w-full bg-transparent overflow-hidden rounded-2xl">
                 {/* Goal Row */}
                 <div className="absolute top-0 left-0 right-0 h-[16.66%] flex items-center justify-center overflow-hidden">
                   <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10 blur-sm"></div>
@@ -1011,17 +1011,17 @@ export default function App() {
                         {game.status === 'won' ? (
                           <>
                             {game.levelId === LEVELS.length ? (
-                              <Trophy size={64} className="text-[#fbbf24] mx-auto mb-4" />
+                              <Trophy className="text-[#fbbf24] mx-auto mb-2 sm:mb-4 w-10 h-10 sm:w-16 sm:h-16" />
                             ) : (
-                              <CheckCircle2 size={64} className="text-[#4ade80] mx-auto mb-4" />
+                              <CheckCircle2 className="text-[#4ade80] mx-auto mb-2 sm:mb-4 w-10 h-10 sm:w-16 sm:h-16" />
                             )}
-                            <h2 data-testid="level-result" className="text-4xl font-black text-white uppercase italic mb-2">
+                            <h2 data-testid="level-result" className="text-2xl sm:text-4xl font-black text-white uppercase italic mb-1 sm:mb-2">
                               {game.levelId === LEVELS.length ? 'Beach Hero!' : 'Level Clear!'}
                             </h2>
-                            <p className="text-white/70 mb-1">
+                            <p className="text-white/70 mb-1 text-sm sm:text-base">
                               {safeCount} of {MAX_TURTLES} turtles reached the ocean.
                             </p>
-                            <p className="flex items-center justify-center gap-1.5 text-[#fbbf24] font-black text-lg mb-6">
+                            <p className="flex items-center justify-center gap-1.5 text-[#fbbf24] font-black text-base sm:text-lg mb-3 sm:mb-6">
                               <Coins size={18} /> +{game.coinsEarned} coins earned
                               {safeCount === MAX_TURTLES && (
                                 <span className="text-xs bg-[#fbbf24] text-[#78350f] px-2 py-0.5 rounded-full uppercase">
@@ -1032,44 +1032,44 @@ export default function App() {
                           </>
                         ) : (
                           <>
-                            <Skull size={64} className="text-red-500 mx-auto mb-4" />
-                            <h2 data-testid="level-result" className="text-4xl font-black text-white uppercase italic mb-2">
+                            <Skull className="text-red-500 mx-auto mb-2 sm:mb-4 w-10 h-10 sm:w-16 sm:h-16" />
+                            <h2 data-testid="level-result" className="text-2xl sm:text-4xl font-black text-white uppercase italic mb-1 sm:mb-2">
                               The Tide Turns
                             </h2>
-                            <p className="text-white/70 mb-1">
+                            <p className="text-white/70 mb-1 text-sm sm:text-base">
                               {safeCount} saved, {deadCount} lost — you needed {game.requiredRescues}.
                             </p>
                             {game.coinsEarned > 0 && (
-                              <p className="flex items-center justify-center gap-1.5 text-[#fbbf24] font-black mb-6">
+                              <p className="flex items-center justify-center gap-1.5 text-[#fbbf24] font-black mb-3 sm:mb-6">
                                 <Coins size={16} /> +{game.coinsEarned} coins kept
                               </p>
                             )}
-                            {game.coinsEarned === 0 && <div className="mb-6" />}
+                            {game.coinsEarned === 0 && <div className="mb-3 sm:mb-6" />}
                           </>
                         )}
 
-                        <div className="flex flex-wrap gap-3 justify-center">
+                        <div className="flex flex-wrap gap-2 sm:gap-3 justify-center">
                           {game.status === 'won' && game.levelId < LEVELS.length && (
                             <button
                               data-testid="next-level"
                               onClick={() => startLevel(game.levelId + 1, game.powers)}
-                              className="bg-[#4ade80] text-[#166534] px-8 py-3 rounded-xl font-bold uppercase tracking-widest hover:bg-white transition-colors flex items-center gap-2"
+                              className="bg-[#4ade80] text-[#166534] px-4 sm:px-8 py-2.5 sm:py-3 rounded-xl font-bold uppercase tracking-widest text-xs sm:text-base hover:bg-white transition-colors flex items-center gap-2"
                             >
-                              Next Level <ChevronRight size={18} />
+                              Next Level <ChevronRight size={16} />
                             </button>
                           )}
                           <button
                             data-testid="retry-level"
                             onClick={() => startLevel(game.levelId, carriedAtLevelStart)}
-                            className="bg-white text-[#4a3728] px-8 py-3 rounded-xl font-bold uppercase tracking-widest hover:bg-[#2e8b57] hover:text-white transition-colors flex items-center gap-2"
+                            className="bg-white text-[#4a3728] px-4 sm:px-8 py-2.5 sm:py-3 rounded-xl font-bold uppercase tracking-widest text-xs sm:text-base hover:bg-[#2e8b57] hover:text-white transition-colors flex items-center gap-2"
                           >
-                            <RotateCcw size={18} /> {game.status === 'won' ? 'Replay' : 'Try Again'}
+                            <RotateCcw size={16} /> {game.status === 'won' ? 'Replay' : 'Try Again'}
                           </button>
                           <button
                             onClick={() => setGame(null)}
-                            className="bg-white/10 text-white px-6 py-3 rounded-xl font-bold uppercase tracking-widest hover:bg-white/25 transition-colors flex items-center gap-2"
+                            className="bg-white/10 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-bold uppercase tracking-widest text-xs sm:text-base hover:bg-white/25 transition-colors flex items-center gap-2"
                           >
-                            <Home size={18} /> Menu
+                            <Home size={16} /> Menu
                           </button>
                         </div>
                       </motion.div>
@@ -1079,7 +1079,7 @@ export default function App() {
               </div>
 
               {/* Eggs at the bottom */}
-              <div className="flex justify-center gap-4 sm:gap-8 py-6 bg-black/5 rounded-b-2xl border-t border-black/10">
+              <div className="shrink-0 w-full max-w-2xl flex justify-center gap-3 sm:gap-8 py-2 sm:py-4 bg-black/5 rounded-2xl border-t border-black/10">
                 {[...Array(MAX_TURTLES)].map((_, i) => {
                   const isHatched = i < game.nextEggIndex;
                   return (
@@ -1091,7 +1091,7 @@ export default function App() {
                       onClick={() => dispatch({ type: 'hatch' })}
                       disabled={isHatched || game.status !== 'playing'}
                       className={`
-                        relative w-14 h-[70px] sm:w-16 sm:h-20 transition-all duration-700
+                        relative w-9 h-[46px] sm:w-14 sm:h-[70px] transition-all duration-700
                         ${isHatched ? 'opacity-10 grayscale scale-75' : 'cursor-pointer hover:drop-shadow-2xl'}
                       `}
                     >
@@ -1138,7 +1138,7 @@ export default function App() {
                         <motion.div
                           animate={{ y: [0, -4, 0], rotate: [-2, 2, -2] }}
                           transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                          className="absolute -top-6 left-1/2 -translate-x-1/2 scale-50 drop-shadow-md"
+                          className="absolute -top-4 sm:-top-6 left-1/2 -translate-x-1/2 scale-[0.35] sm:scale-50 drop-shadow-md"
                         >
                           <div className="relative w-12 h-12 flex items-center justify-center">
                             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 w-6 h-7 bg-[#4ade80] rounded-full border-2 border-[#166534] flex flex-col items-center pt-1.5">
@@ -1178,7 +1178,7 @@ export default function App() {
       </AnimatePresence>
 
       {/* Footer */}
-      <div className="fixed bottom-4 left-4 right-4 flex justify-between items-center pointer-events-none opacity-30 text-[10px] font-mono uppercase tracking-widest">
+      <div className="fixed bottom-4 left-4 right-4 hidden md:flex justify-between items-center pointer-events-none opacity-30 text-[10px] font-mono uppercase tracking-widest">
         <span>© 2026 Turtle Rescue Corp</span>
         <span>Build v2.0.0</span>
       </div>

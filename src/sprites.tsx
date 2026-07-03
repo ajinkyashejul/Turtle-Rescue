@@ -48,7 +48,7 @@ export const TurtleSprite = ({
       <div
         className={`
         relative w-16 h-16 transition-all duration-500 flex items-center justify-center
-        ${isInShell ? "scale-75" : "scale-100"}
+        ${isInShell ? "scale-[0.6] sm:scale-75" : "scale-[0.8] sm:scale-100"}
         ${isDead ? "grayscale opacity-40 rotate-180" : ""}
       `}
       >
