@@ -225,10 +225,16 @@ const BirdShadow: React.FC<{ row: number; col: number }> = ({ row, col }) => (
 
 const DangerRing: React.FC<{ row: number; col: number }> = ({ row, col }) => (
   <motion.div className="absolute z-10 pointer-events-none" animate={cellStyle(row, col)}>
-    <div className="w-full h-full flex items-center justify-center">
+    <div className="w-full h-full flex items-center justify-center relative">
+      {/* Soft red wash so the cell itself reads as unsafe */}
       <motion.div
-        className="w-3/5 h-3/5 rounded-full border-4 border-red-500/70"
-        animate={{ scale: [0.8, 1.1, 0.8], opacity: [0.4, 0.9, 0.4] }}
+        className="absolute inset-[12%] rounded-2xl bg-red-500/20"
+        animate={{ opacity: [0.15, 0.4, 0.15] }}
+        transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      <motion.div
+        className="w-[62%] aspect-square rounded-full border-4 border-red-500/80 shadow-[0_0_12px_rgba(239,68,68,0.5)]"
+        animate={{ scale: [0.8, 1.1, 0.8], opacity: [0.5, 1, 0.5] }}
         transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
       />
     </div>
@@ -340,7 +346,7 @@ const TitleScreen = ({ meta, difficulty, setDifficulty, onStart }: TitleScreenPr
       </p>
     </motion.div>
 
-    <div className="w-full bg-white/85 backdrop-blur-md rounded-3xl border-2 border-[#4a3728] shadow-[6px_6px_0px_0px_rgba(74,55,40,1)] p-3 sm:p-6 flex flex-col gap-3 sm:gap-5">
+    <div className="w-full bg-[#fdf6e3]/90 backdrop-blur-md rounded-3xl border-2 border-[#4a3728] shadow-[6px_6px_0px_0px_rgba(74,55,40,1)] p-3 sm:p-6 flex flex-col gap-3 sm:gap-5">
       <div className="flex items-center justify-between">
         <span className="font-black uppercase italic tracking-tight text-base sm:text-lg">Your Treasure</span>
         <CoinBadge coins={meta.coins} />
@@ -357,7 +363,7 @@ const TitleScreen = ({ meta, difficulty, setDifficulty, onStart }: TitleScreenPr
                 py-2 sm:py-3 rounded-xl font-black uppercase text-xs sm:text-sm transition-all border-2
                 ${difficulty === d
                   ? 'bg-[#4a3728] text-white border-[#4a3728] shadow-lg scale-[1.03]'
-                  : 'bg-white text-[#4a3728] border-[#4a3728]/30 hover:border-[#4a3728]'}
+                  : 'bg-[#fffdf5] text-[#4a3728] border-[#4a3728]/30 hover:border-[#4a3728]'}
               `}
             >
               {DIFFICULTIES[d].label}
@@ -688,7 +694,7 @@ export default function App() {
       {game && level && (
         <div className="relative z-10 w-full max-w-4xl h-full min-h-0 flex flex-col gap-1.5 sm:gap-3">
           {/* Header / HUD */}
-          <div className="shrink-0 flex flex-wrap items-center justify-between gap-1.5 sm:gap-3 bg-white/80 backdrop-blur-md p-1.5 sm:p-3 rounded-2xl border-2 border-[#4a3728] shadow-[4px_4px_0px_0px_rgba(74,55,40,1)]">
+          <div className="shrink-0 flex flex-wrap items-center justify-between gap-1.5 sm:gap-3 bg-[#fdf6e3]/90 backdrop-blur-md p-1.5 sm:p-3 rounded-2xl border-2 border-[#4a3728] shadow-[4px_4px_0px_0px_rgba(74,55,40,1)]">
             {/* Power toolbar */}
             <div className="flex gap-1 sm:gap-2 flex-wrap">
               {unlockedPowers.map((p) => {
@@ -845,13 +851,14 @@ export default function App() {
                   })}
                 </div>
 
-                {/* Danger telegraphing */}
+                {/* Danger telegraphing — red ring on every strike cell; gulls also cast a shadow */}
                 {dangerCells.map((d, i) => {
                   const def = game.predatorDefs.find((x) => x.id === d.defId)!;
-                  return def.kind === 'seagull' ? (
-                    <BirdShadow key={`shadow-${d.defId}`} row={d.row} col={d.col} />
-                  ) : (
-                    <DangerRing key={`danger-${d.defId}-${i}`} row={d.row} col={d.col} />
+                  return (
+                    <React.Fragment key={`danger-${d.defId}-${i}`}>
+                      <DangerRing row={d.row} col={d.col} />
+                      {def.kind === 'seagull' && <BirdShadow row={d.row} col={d.col} />}
+                    </React.Fragment>
                   );
                 })}
 
@@ -1095,8 +1102,11 @@ export default function App() {
                 </AnimatePresence>
               </div>
 
-              {/* Eggs at the bottom */}
-              <div className="shrink-0 w-full max-w-2xl flex justify-center gap-3 sm:gap-8 py-2 sm:py-4 bg-black/5 rounded-2xl border-t border-black/10">
+              {/* Eggs at the bottom — the nest */}
+              <div className="shrink-0 w-full max-w-2xl relative flex justify-center gap-3 sm:gap-8 py-2 sm:py-4 bg-[#e9d8b0]/45 rounded-2xl border-2 border-[#c8ab7a]/50 shadow-[inset_0_2px_8px_rgba(120,85,40,0.15)]">
+                <span className="absolute top-1 left-2.5 text-[8px] sm:text-[10px] font-bold uppercase tracking-[0.25em] text-[#4a3728]/40 pointer-events-none">
+                  Nest
+                </span>
                 {[...Array(MAX_TURTLES)].map((_, i) => {
                   const isHatched = i < game.nextEggIndex;
                   return (
