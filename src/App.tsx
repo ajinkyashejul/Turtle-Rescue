@@ -7,6 +7,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Skull,
+  Waves,
   CheckCircle2,
   RotateCcw,
   Info,
@@ -144,29 +145,32 @@ const PathOverlay = () => {
 
         return (
           <g key={i}>
+            {/* Soft depression in the sand */}
             <path
               d={d}
               fill="none"
-              stroke="#fdf5e6"
-              strokeWidth="24"
+              stroke="#8a6d4f"
+              strokeWidth="16"
               strokeLinecap="round"
-              className="opacity-10 blur-md"
+              className="opacity-[0.12] blur-[2px]"
             />
+            {/* Footprint trail */}
             <path
               d={d}
               fill="none"
               stroke="#fdf5e6"
-              strokeWidth="12"
+              strokeWidth="10"
               strokeLinecap="round"
               className="sand-trail"
             />
             <path
               d={d}
               fill="none"
-              stroke="white"
-              strokeWidth="1"
-              strokeDasharray="4 8"
-              className="opacity-20"
+              stroke="#5d4a37"
+              strokeWidth="1.5"
+              strokeDasharray="1 10"
+              strokeLinecap="round"
+              className="opacity-30"
             />
           </g>
         );
@@ -780,9 +784,22 @@ export default function App() {
           <div className="flex-1 min-h-0 flex flex-col items-center w-full">
             <div className="h-full min-h-0 w-full flex flex-col items-center gap-1 sm:gap-2">
               <div className="relative flex-1 min-h-0 aspect-[5/6] max-w-full bg-transparent overflow-hidden rounded-2xl">
-                {/* Goal Row */}
-                <div className="absolute top-0 left-0 right-0 h-[16.66%] flex items-center justify-center overflow-hidden">
-                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10 blur-sm"></div>
+                {/* Goal Row — the ocean, unmistakably */}
+                <div className="absolute top-0 left-0 right-0 h-[16.66%] overflow-hidden pointer-events-none rounded-t-2xl">
+                  <div className="absolute inset-0 bg-gradient-to-b from-cyan-400/25 via-cyan-300/10 to-transparent" />
+                  {/* Animated foam line at the water's edge */}
+                  <motion.div
+                    className="absolute bottom-0 left-0 right-0 h-1.5 bg-white/40 blur-[3px]"
+                    animate={{ y: [0, -3, 0], opacity: [0.35, 0.6, 0.35] }}
+                    transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center gap-1.5 text-white/70">
+                    <Waves size={13} />
+                    <span className="text-[9px] sm:text-[11px] font-bold uppercase tracking-[0.3em] drop-shadow">
+                      The Ocean · Safety
+                    </span>
+                    <Waves size={13} />
+                  </div>
                 </div>
 
                 <PathOverlay />
