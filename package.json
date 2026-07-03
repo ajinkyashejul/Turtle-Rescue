@@ -13,6 +13,7 @@
     "dump-actions": "tsx scripts/dump-actions.ts"
   },
   "dependencies": {
+    "@fontsource/fredoka": "^5.2.10",
     "@google/genai": "^1.29.0",
     "@tailwindcss/vite": "^4.1.14",
     "@vitejs/plugin-react": "^5.0.4",

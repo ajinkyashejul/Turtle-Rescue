@@ -1,4 +1,18 @@
+@import "@fontsource/fredoka/400.css";
+@import "@fontsource/fredoka/500.css";
+@import "@fontsource/fredoka/600.css";
+@import "@fontsource/fredoka/700.css";
 @import "tailwindcss";
+
+@theme {
+  --font-sans: "Fredoka", ui-rounded, "Comic Sans MS", system-ui, sans-serif;
+}
+
+/* Fredoka has no italic; don't let the browser fake a skew on the wordmark */
+.font-sans,
+body {
+  font-synthesis-style: none;
+}
 
 @layer utilities {
   .bg-beach {
