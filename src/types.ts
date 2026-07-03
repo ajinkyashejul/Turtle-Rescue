@@ -80,7 +80,7 @@ export interface GameState {
   leaves: Leaf[];
   decoys: Decoy[];
   powers: Record<PowerType, number>;
-  nextEggIndex: number;
+  hatchedEggs: number[]; // egg indices already hatched — each egg maps to its own path
   freezeTurns: number;
   requiredRescues: number; // difficulty-adjusted
   coinPerRescue: number; // difficulty-adjusted
@@ -91,7 +91,7 @@ export interface GameState {
 }
 
 export type PlayerAction =
-  | { type: "hatch" }
+  | { type: "hatch"; eggIndex: number }
   | { type: "move"; turtleId: number }
   | { type: "sprint"; turtleId: number }
   | { type: "shell"; turtleId: number }

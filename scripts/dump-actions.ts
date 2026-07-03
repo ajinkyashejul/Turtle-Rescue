@@ -18,7 +18,9 @@ function candidateActions(s: GameState): PlayerAction[] {
   for (const t of active) actions.push({ type: "move", turtleId: t.id });
   if (s.powers.sprint > 0)
     for (const t of active) actions.push({ type: "sprint", turtleId: t.id });
-  if (s.nextEggIndex < MAX_TURTLES) actions.push({ type: "hatch" });
+  for (let i = 0; i < MAX_TURTLES; i++) {
+    if (!s.hatchedEggs.includes(i)) actions.push({ type: "hatch", eggIndex: i });
+  }
   actions.push({ type: "wait" });
   if (s.powers.shell > 0)
     for (const t of active) actions.push({ type: "shell", turtleId: t.id });
@@ -53,7 +55,7 @@ function score(s: GameState): number {
   if (s.status === "won") v += 100000;
   if (s.status === "lost") v -= 100000;
   for (const t of s.turtles) if (t.state === "active") v += t.pathStep * 30;
-  v += s.nextEggIndex * 10;
+  v += s.hatchedEggs.length * 10;
   v += Object.values(s.powers).reduce((a, b) => a + b, 0) * 15;
   const danger = getDangerCells(s);
   for (const t of s.turtles) {

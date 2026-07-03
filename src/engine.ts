@@ -53,7 +53,7 @@ export function createLevelState(
     leaves: [],
     decoys: [],
     powers,
-    nextEggIndex: 0,
+    hatchedEggs: [],
     freezeTurns: 0,
     requiredRescues: Math.max(1, level.requiredRescues + diff.requiredDelta),
     coinPerRescue: diff.coinPerRescue,
@@ -130,7 +130,11 @@ export function getDangerCells(
 function validateAction(state: GameState, action: PlayerAction): boolean {
   switch (action.type) {
     case "hatch":
-      return state.nextEggIndex < MAX_TURTLES;
+      return (
+        action.eggIndex >= 0 &&
+        action.eggIndex < MAX_TURTLES &&
+        !state.hatchedEggs.includes(action.eggIndex)
+      );
     case "move": {
       const t = state.turtles.find((x) => x.id === action.turtleId);
       return (
@@ -202,7 +206,8 @@ export function applyTurn(state: GameState, action: PlayerAction): GameState {
   // 1. Player action
   switch (action.type) {
     case "hatch": {
-      const pathIndex = s.nextEggIndex;
+      // The clicked egg hatches onto ITS OWN path — egg N is the start of path N
+      const pathIndex = action.eggIndex;
       const [row, col] = TURTLE_PATHS[pathIndex][0];
       s.turtles.push({
         id: pathIndex + 1,
@@ -213,7 +218,7 @@ export function applyTurn(state: GameState, action: PlayerAction): GameState {
         pathIndex,
         pathStep: 0,
       });
-      s.nextEggIndex += 1;
+      s.hatchedEggs = [...s.hatchedEggs, action.eggIndex];
       break;
     }
     case "move":

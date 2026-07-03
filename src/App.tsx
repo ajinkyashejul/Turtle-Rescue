@@ -1108,14 +1108,14 @@ export default function App() {
                   Nest
                 </span>
                 {[...Array(MAX_TURTLES)].map((_, i) => {
-                  const isHatched = i < game.nextEggIndex;
+                  const isHatched = game.hatchedEggs.includes(i);
                   return (
                     <motion.button
                       key={i}
                       data-testid={`egg-${i}`}
                       whileHover={!isHatched ? { scale: 1.15, y: -8 } : {}}
                       whileTap={!isHatched ? { scale: 0.9 } : {}}
-                      onClick={() => dispatch({ type: 'hatch' })}
+                      onClick={() => dispatch({ type: 'hatch', eggIndex: i })}
                       disabled={isHatched || game.status !== 'playing'}
                       className={`
                         relative w-9 h-[46px] sm:w-14 sm:h-[70px] transition-all duration-700

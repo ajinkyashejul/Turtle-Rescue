@@ -49,13 +49,12 @@ const clickByTestId = async (id) => {
   await page.locator(`[data-testid="${id}"]`).dispatchEvent('click');
 };
 
-let eggIndex = 0;
 let midShotTaken = false;
 for (let i = 0; i < actions.length; i++) {
   const a = actions[i];
   switch (a.type) {
     case 'hatch':
-      await clickByTestId(`egg-${eggIndex++}`);
+      await clickByTestId(`egg-${a.eggIndex}`);
       break;
     case 'move':
       await clickByTestId(`turtle-${a.turtleId}`);
