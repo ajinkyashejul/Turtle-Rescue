@@ -24,13 +24,23 @@ Pushing to `fork` is what makes changes go live: every commit on `fork`'s `ajink
 branch auto-deploys to production on Vercel (project `turtle-rescue`,
 `turtle-rescue-pearl.vercel.app`).
 
-## Git identity note
+## Git identity note (per-remote auth — configured folder-locally)
 
-The terminal here authenticates as GitHub account **`ajinkya-mili`** (a collaborator on
-`ishanjajoo/Turtle-Rescue`). Vercel is connected via the separate **`ajinkyashejul`**
-account, which owns the `fork`.
+Two GitHub accounts are involved, and each remote authenticates as the right one:
 
-For `git push fork ajinkya` to work, `ajinkya-mili` must be a **collaborator** on
-`ajinkyashejul/Turtle-Rescue`. If a push to `fork` returns `permission denied`, add
-`ajinkya-mili` as a collaborator at:
-`https://github.com/ajinkyashejul/Turtle-Rescue/settings/access`
+- **`origin`** (`ishanjajoo/...`) → pushes as **`ajinkya-mili`** over HTTPS (via `gh`),
+  who is a collaborator on the shared repo.
+- **`fork`** (`ajinkyashejul/...`) → pushes as **`ajinkyashejul`** over SSH, using the
+  personal key `~/.ssh/id_ed25519_personal`, who owns the fork + the Vercel project.
+
+This is wired up with repo-local config (no global changes, no collaborator needed):
+
+```bash
+# fork remote uses SSH; this repo forces the personal SSH key
+git remote get-url fork        # git@github.com:ajinkyashejul/Turtle-Rescue.git
+git config --local core.sshCommand
+# → ssh -i /Users/ajinkyashejul/.ssh/id_ed25519_personal -o IdentitiesOnly=yes
+```
+
+Commit identity in this folder is already set to `ajinkyashejul` /
+`ajinkyashejul4195@gmail.com`.
