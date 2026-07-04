@@ -7,6 +7,15 @@ import { Skull } from "lucide-react";
 
 const svgFx = { transformBox: "fill-box", transformOrigin: "center" } as const;
 
+// ---------------------------------------------------------------------------
+// TurtleSprite — the hatchling.
+//
+// Designed as a CHARACTER, not a diagram: a chibi baby sea turtle in a hero
+// 3/4 view with baby proportions (big head, huge eyes), a glossy just-hatched
+// shell, and little paddle-arms. It never spins — it always faces the player.
+// Lateral moves flip it horizontally; forward moves make it stretch and paddle
+// eagerly. All the charm (the face) stays pointed at the viewer at all times.
+// ---------------------------------------------------------------------------
 export const TurtleSprite = ({
   isInShell,
   isDead,
@@ -19,191 +28,159 @@ export const TurtleSprite = ({
   col: number;
 }) => {
   const [isCrawling, setIsCrawling] = useState(false);
-  const [rotation, setRotation] = useState(0);
+  const [facing, setFacing] = useState<1 | -1>(1);
+  const [lunge, setLunge] = useState(0); // -1 = moving up/forward, 1 = down
   const prevPos = useRef({ row, col });
-  const uid = useRef(`t${Math.floor(row * 7 + col)}`);
+  const uid = useRef(`h${Math.floor(row * 7 + col)}`);
+  const u = uid.current;
 
   useEffect(() => {
     if (prevPos.current.row !== row || prevPos.current.col !== col) {
       const dx = col - prevPos.current.col;
       const dy = row - prevPos.current.row;
-      if (dx !== 0 || dy !== 0) {
-        const angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
-        setRotation(angle);
-      }
-
+      if (dx !== 0) setFacing(dx > 0 ? 1 : -1);
+      setLunge(dy < 0 ? -1 : dy > 0 ? 1 : 0);
       setIsCrawling(true);
-      const timer = setTimeout(() => setIsCrawling(false), 1000);
+      const timer = setTimeout(() => setIsCrawling(false), 900);
       prevPos.current = { row, col };
       return () => clearTimeout(timer);
     }
   }, [row, col]);
 
-  const flipperAnim = (dir: 1 | -1, delay = 0) =>
+  // Skin (head + flippers) vs shell palettes; both swap to browns when hiding.
+  const skinLight = "#bff2c4", skinDark = "#5ecb83";
+  const seam = isInShell ? "#3a271a" : "#0c5a2b";
+
+  // Front paddle-arm — reaches up and out, strokes when crawling.
+  const armAnim = (dir: 1 | -1) =>
     isCrawling
-      ? { rotate: [dir * -22, dir * 22, dir * -22], transition: { duration: 0.25, repeat: Infinity, delay } }
-      : { rotate: 0 };
-
-  const u = uid.current;
-  // Palette swaps to earthy browns when the turtle tucks into its shell.
-  const seam = isInShell ? "#3a271a" : "#0c4522";
-  const rimCol = isInShell ? "#2e1c12" : "#0a3a1d";
-
-  // Carapace geometry (top-down): 5 vertebral scutes down the spine,
-  // costal seams radiating out to the marginal rim.
-  const vCenters = [27.8, 35, 42.2, 49.4, 56.6];
-  const junctions = [31.4, 38.6, 45.8, 53];
-  const rimX = (y: number, sign: number) => {
-    const t = 1 - ((y - 42) / 19.5) ** 2;
-    return 32 + sign * (t > 0 ? 15 * Math.sqrt(t) : 0);
-  };
-  const hex = (yc: number) => {
-    const h = 7.4;
-    return `M32 ${yc - h / 2} L37 ${yc - h / 4} L37 ${yc + h / 4} L32 ${yc + h / 2} L27 ${yc + h / 4} L27 ${yc - h / 4} Z`;
-  };
+      ? { rotate: [dir * -6, dir * 26, dir * -6], transition: { duration: 0.3, repeat: Infinity } }
+      : { rotate: [0, dir * 8, 0], transition: { duration: 2.4, repeat: Infinity, ease: "easeInOut" } };
 
   return (
     <motion.div
       className="relative w-full h-full flex items-center justify-center"
       animate={{
-        y: isCrawling ? [0, -2, 0] : 0,
-        rotate: isCrawling ? [rotation - 6, rotation + 6, rotation - 6] : rotation,
+        y: isCrawling ? [0, -3, 0] : [0, -1.2, 0],
+        rotate: isCrawling ? [-4, 4, -4] : 0,
       }}
       transition={{
-        y: { duration: 0.4, repeat: isCrawling ? 2 : 0 },
-        rotate: { duration: 0.25, repeat: isCrawling ? 4 : 0 },
+        y: { duration: isCrawling ? 0.3 : 2.6, repeat: Infinity, ease: "easeInOut" },
+        rotate: { duration: 0.3, repeat: isCrawling ? 3 : 0 },
       }}
     >
-      <div
-        className={`
-        relative w-16 h-16 transition-all duration-500 flex items-center justify-center
-        ${isInShell ? "scale-[0.6] sm:scale-75" : "scale-[0.8] sm:scale-100"}
-        ${isDead ? "grayscale opacity-40 rotate-180" : ""}
-      `}
+      <motion.div
+        className={`relative w-16 h-16 flex items-center justify-center transition-all duration-500
+          ${isInShell ? "scale-[0.62] sm:scale-[0.78]" : "scale-[0.82] sm:scale-100"}
+          ${isDead ? "grayscale opacity-40" : ""}`}
+        animate={{ scaleX: facing, rotate: isDead ? 180 : 0 }}
+        transition={{ scaleX: { type: "spring", stiffness: 300, damping: 20 } }}
+        style={{ transformOrigin: "center" }}
       >
         {!isDead && (
-          <div className="absolute bottom-1 w-11 h-4 bg-black/25 rounded-full blur-md -z-10" />
+          <div className="absolute bottom-1.5 w-10 h-3 bg-black/25 rounded-full blur-md -z-10" />
         )}
 
-        <svg viewBox="0 0 64 72" className="w-14 h-[63px] drop-shadow-sm">
+        <motion.svg
+          viewBox="0 0 64 64"
+          className="w-[52px] h-[52px] drop-shadow-md"
+          animate={{ scaleY: isCrawling && lunge === -1 ? [1, 1.06, 1] : 1 }}
+          transition={{ duration: 0.3, repeat: isCrawling ? 3 : 0 }}
+        >
           <defs>
-            {/* Carapace body — light from the upper-left */}
-            <radialGradient id={`${u}-shell`} cx="40%" cy="30%" r="78%">
-              <stop offset="0%" stopColor={isInShell ? "#c19a7d" : "#7defA1"} />
-              <stop offset="45%" stopColor={isInShell ? "#8a6448" : "#34cf6b"} />
-              <stop offset="100%" stopColor={isInShell ? "#5a3d2a" : "#137a3c"} />
+            <radialGradient id={`${u}-shell`} cx="38%" cy="26%" r="82%">
+              <stop offset="0%" stopColor={isInShell ? "#cda98a" : "#5fe39a"} />
+              <stop offset="52%" stopColor={isInShell ? "#8a6448" : "#28b463"} />
+              <stop offset="100%" stopColor={isInShell ? "#553a28" : "#0f8a40"} />
             </radialGradient>
-            {/* Individual scute plates — slightly glossier */}
-            <linearGradient id={`${u}-plate`} x1="0.25" y1="0" x2="0.75" y2="1">
-              <stop offset="0%" stopColor={isInShell ? "#b48b6c" : "#69e592"} stopOpacity="0.9" />
-              <stop offset="100%" stopColor={isInShell ? "#6f4c34" : "#199a49"} stopOpacity="0.9" />
+            <linearGradient id={`${u}-plate`} x1="0.3" y1="0" x2="0.7" y2="1">
+              <stop offset="0%" stopColor={isInShell ? "#c19a7d" : "#7dedad"} stopOpacity="0.85" />
+              <stop offset="100%" stopColor={isInShell ? "#6f4c34" : "#1c9c4c"} stopOpacity="0.85" />
             </linearGradient>
-            {/* Marginal rim ring */}
-            <radialGradient id={`${u}-rim`} cx="40%" cy="30%" r="80%">
-              <stop offset="0%" stopColor={isInShell ? "#7a5540" : "#1f9a4d"} />
-              <stop offset="100%" stopColor={isInShell ? "#3e2820" : "#0c5e2c"} />
-            </radialGradient>
             <linearGradient id={`${u}-skin`} x1="0.3" y1="0" x2="0.7" y2="1">
-              <stop offset="0%" stopColor="#9cf4b4" />
-              <stop offset="100%" stopColor="#2fb562" />
+              <stop offset="0%" stopColor={skinLight} />
+              <stop offset="100%" stopColor={skinDark} />
             </linearGradient>
-            <clipPath id={`${u}-inner`}>
-              <ellipse cx="32" cy="42" rx="15.5" ry="20" />
-            </clipPath>
           </defs>
 
+          {/* Back flippers (little feet) */}
           {!isInShell && (
-            <g>
-              {/* Front paddle flippers — swept forward, rotate at the shoulder */}
-              <motion.path
-                d="M20 33 Q7 25 3 15 Q2 10 7 11 Q17 15 22 29 Z"
-                fill={`url(#${u}-skin)`} stroke={seam} strokeWidth="1.6" strokeLinejoin="round"
-                style={{ transformBox: "fill-box", transformOrigin: "88% 88%" }} animate={flipperAnim(-1)}
-              />
-              <motion.path
-                d="M44 33 Q57 25 61 15 Q62 10 57 11 Q47 15 42 29 Z"
-                fill={`url(#${u}-skin)`} stroke={seam} strokeWidth="1.6" strokeLinejoin="round"
-                style={{ transformBox: "fill-box", transformOrigin: "12% 88%" }} animate={flipperAnim(1)}
-              />
-              {/* Rear flippers — smaller, swept back */}
-              <motion.path
-                d="M20 53 Q10 58 8 66 Q8 70 13 68 Q20 63 23 56 Z"
-                fill={`url(#${u}-skin)`} stroke={seam} strokeWidth="1.5" strokeLinejoin="round"
-                style={{ transformBox: "fill-box", transformOrigin: "90% 12%" }} animate={flipperAnim(1, 0.08)}
-              />
-              <motion.path
-                d="M44 53 Q54 58 56 66 Q56 70 51 68 Q44 63 41 56 Z"
-                fill={`url(#${u}-skin)`} stroke={seam} strokeWidth="1.5" strokeLinejoin="round"
-                style={{ transformBox: "fill-box", transformOrigin: "10% 12%" }} animate={flipperAnim(-1, 0.08)}
-              />
-              {/* Tail */}
-              <path d="M32 62 L28.5 71 Q32 73.5 35.5 71 Z" fill={`url(#${u}-skin)`} stroke={seam} strokeWidth="1.4" strokeLinejoin="round" />
-              {/* Head + neck */}
-              <motion.g animate={isCrawling ? { y: [0, -1.5, 0], transition: { duration: 0.4, repeat: Infinity } } : {}}>
-                <path d="M26 20 Q26 25 32 25 Q38 25 38 20 Z" fill={`url(#${u}-skin)`} stroke={seam} strokeWidth="1.4" />
-                <circle cx="32" cy="11" r="9" fill={`url(#${u}-skin)`} stroke={seam} strokeWidth="1.8" />
-                {/* Pale sea-turtle cheek patches */}
-                <ellipse cx="24.5" cy="12" rx="2.4" ry="3" fill="#eafbe4" opacity="0.55" />
-                <ellipse cx="39.5" cy="12" rx="2.4" ry="3" fill="#eafbe4" opacity="0.55" />
-                {/* Speckles */}
-                <circle cx="30" cy="5.5" r="0.7" fill="#eafbe4" opacity="0.7" />
-                <circle cx="34.5" cy="6" r="0.6" fill="#eafbe4" opacity="0.7" />
-                <circle cx="32" cy="4.5" r="0.5" fill="#eafbe4" opacity="0.6" />
-                {/* Eyes with glints */}
-                <circle cx="28.4" cy="9.5" r="2.4" fill="#1c1917" />
-                <circle cx="35.6" cy="9.5" r="2.4" fill="#1c1917" />
-                <circle cx="29.3" cy="8.6" r="0.85" fill="white" />
-                <circle cx="36.5" cy="8.6" r="0.85" fill="white" />
-                {/* Blush */}
-                <ellipse cx="25.8" cy="14" rx="1.8" ry="1" fill="#fb7185" opacity="0.5" />
-                <ellipse cx="38.2" cy="14" rx="1.8" ry="1" fill="#fb7185" opacity="0.5" />
-                {/* Smile */}
-                <path d="M29.5 15.5 Q32 17.4 34.5 15.5" fill="none" stroke={seam} strokeWidth="1.2" strokeLinecap="round" />
-              </motion.g>
+            <g fill={`url(#${u}-skin)`} stroke={seam} strokeWidth="1.4" strokeLinejoin="round">
+              <path d="M24 52 Q19 56 21.5 60 Q25 60.5 27 55 Z" />
+              <path d="M40 52 Q45 56 42.5 60 Q39 60.5 37 55 Z" />
             </g>
           )}
 
-          {/* ---- Carapace ---- */}
-          {/* Marginal rim ring */}
-          <ellipse cx="32" cy="42" rx="19" ry="23" fill={`url(#${u}-rim)`} stroke={rimCol} strokeWidth="1.6" />
-          {/* Body under the plates */}
-          <ellipse cx="32" cy="42" rx="15.5" ry="20" fill={`url(#${u}-shell)`} stroke={rimCol} strokeWidth="1" />
-
-          {/* Plated interior, clipped to the inner dome */}
-          <g clipPath={`url(#${u}-inner)`}>
-            {/* Vertebral (spine) scutes */}
-            {vCenters.map((yc, i) => (
-              <path key={`v${i}`} d={hex(yc)} fill={`url(#${u}-plate)`} stroke={seam} strokeWidth="1.1" strokeLinejoin="round" />
-            ))}
-            {/* Costal seams radiating to the rim */}
-            <g stroke={seam} strokeWidth="1.1" opacity="0.85" strokeLinecap="round">
-              {junctions.map((y, i) => (
-                <g key={`c${i}`}>
-                  <line x1="27" y1={y} x2={rimX(y, -1)} y2={y + 1.5} />
-                  <line x1="37" y1={y} x2={rimX(y, 1)} y2={y + 1.5} />
-                </g>
-              ))}
-            </g>
+          {/* Shell dome */}
+          <path
+            d="M13 44 Q13 25 32 25 Q51 25 51 44 Q51 55 32 55 Q13 55 13 44 Z"
+            fill={`url(#${u}-shell)`}
+            stroke={seam}
+            strokeWidth="2.2"
+            strokeLinejoin="round"
+          />
+          {/* Bold scute seams — few, readable at small size */}
+          <g stroke={seam} strokeWidth="1.3" opacity="0.55" fill="none" strokeLinecap="round">
+            <path d="M22 33 Q32 28 42 33" />
+            <path d="M32 27 L32 54" />
+            <path d="M22 33 L15.5 46" />
+            <path d="M42 33 L48.5 46" />
+            <path d="M15 47 Q32 52 49 47" />
           </g>
+          {/* Central highlight plate + gloss */}
+          <ellipse cx="24" cy="34" rx="6.5" ry="4.2" fill="white" opacity="0.4" transform="rotate(-24 24 34)" />
+          {/* Just-hatched sparkle */}
+          {!isInShell && (
+            <path d="M45 30 l1 2.4 2.4 1 -2.4 1 -1 2.4 -1 -2.4 -2.4 -1 2.4 -1 Z" fill="white" opacity="0.75" />
+          )}
 
-          {/* Marginal scute ticks around the rim */}
-          <g stroke={rimCol} strokeWidth="1" opacity="0.55" strokeLinecap="round">
-            {[...Array(16)].map((_, i) => {
-              const a = (i / 16) * Math.PI * 2 - Math.PI / 2;
-              const c = Math.cos(a), s = Math.sin(a);
-              return (
-                <line key={`m${i}`} x1={32 + 15.5 * c} y1={42 + 20 * s} x2={32 + 18.5 * c} y2={42 + 22.5 * s} />
-              );
-            })}
-          </g>
+          {!isInShell && (
+            <>
+              {/* Front paddle-arms */}
+              <motion.path
+                d="M20 42 Q7 40 4 31 Q3 26 8 28 Q18 32 22 40 Z"
+                fill={`url(#${u}-skin)`} stroke={seam} strokeWidth="1.5" strokeLinejoin="round"
+                style={{ transformBox: "fill-box", transformOrigin: "90% 90%" }} animate={armAnim(-1)}
+              />
+              <motion.path
+                d="M44 42 Q57 40 60 31 Q61 26 56 28 Q46 32 42 40 Z"
+                fill={`url(#${u}-skin)`} stroke={seam} strokeWidth="1.5" strokeLinejoin="round"
+                style={{ transformBox: "fill-box", transformOrigin: "10% 90%" }} animate={armAnim(1)}
+              />
 
-          {/* Volumetric shading + specular highlight */}
-          <ellipse cx="38" cy="50" rx="15" ry="19" fill="#000" opacity="0.12" clipPath={`url(#${u}-inner)`} />
-          <ellipse cx="25" cy="31" rx="6.5" ry="4" fill="white" opacity="0.4" transform="rotate(-24 25 31)" />
-        </svg>
+              {/* Big baby head */}
+              <motion.g
+                animate={isCrawling ? { y: [0, -1.5, 0], transition: { duration: 0.3, repeat: Infinity } } : {}}
+              >
+                <circle cx="32" cy="18" r="10.5" fill={`url(#${u}-skin)`} stroke={seam} strokeWidth="1.9" />
+                {/* Head speckles */}
+                <circle cx="27" cy="10" r="0.8" fill="#eafbe4" opacity="0.7" />
+                <circle cx="36" cy="10.5" r="0.7" fill="#eafbe4" opacity="0.7" />
+                <circle cx="32" cy="8.5" r="0.6" fill="#eafbe4" opacity="0.6" />
+                {/* Huge eyes */}
+                <circle cx="26.6" cy="17.5" r="3.6" fill="#152018" />
+                <circle cx="37.4" cy="17.5" r="3.6" fill="#152018" />
+                <circle cx="27.9" cy="16" r="1.35" fill="white" />
+                <circle cx="38.7" cy="16" r="1.35" fill="white" />
+                <circle cx="25.6" cy="18.9" r="0.7" fill="white" opacity="0.85" />
+                <circle cx="36.4" cy="18.9" r="0.7" fill="white" opacity="0.85" />
+                {/* Rosy cheeks */}
+                <ellipse cx="22.5" cy="21.5" rx="2.1" ry="1.3" fill="#fb7185" opacity="0.55" />
+                <ellipse cx="41.5" cy="21.5" rx="2.1" ry="1.3" fill="#fb7185" opacity="0.55" />
+                {/* Smile */}
+                <path d="M29 22.5 Q32 25.5 35 22.5" fill="none" stroke={seam} strokeWidth="1.3" strokeLinecap="round" />
+              </motion.g>
+            </>
+          )}
+
+          {isInShell && (
+            /* Tucked in: just the shell, with a dark opening where the head was */
+            <ellipse cx="32" cy="27" rx="7" ry="4" fill="#000" opacity="0.35" />
+          )}
+        </motion.svg>
 
         {isDead && (
-          <div className="absolute inset-0 flex items-center justify-center z-30">
+          <div className="absolute inset-0 flex items-center justify-center z-30" style={{ transform: "rotate(180deg)" }}>
             <Skull className="w-6 h-6 text-red-900/50" />
           </div>
         )}
@@ -212,7 +189,7 @@ export const TurtleSprite = ({
             Shell
           </div>
         )}
-      </div>
+      </motion.div>
     </motion.div>
   );
 };
@@ -225,60 +202,66 @@ export const FlyingBird = ({
   isHunter?: boolean;
 }) => {
   const uid = useRef(`b${isHunter ? "h" : "n"}${isShadow ? "s" : ""}`);
-  const stroke = isShadow ? "black" : isHunter ? "#9a3412" : "#64748b";
+  const u = uid.current;
+  const stroke = isShadow ? "black" : isHunter ? "#7c2d12" : "#5b6b7c";
+  const bodyFill = isShadow ? "black" : `url(#${u}-body)`;
+  const wingFill = isShadow ? "black" : `url(#${u}-wing)`;
+
+  const flap = {
+    animate: { rotateX: [0, 62, 0], y: [0, 4, 0] },
+    transition: { duration: 0.34, repeat: Infinity, ease: "easeInOut" as const },
+  };
+
   return (
-    <div
-      className={`relative ${
-        isShadow ? "opacity-25 blur-[2px] grayscale brightness-0" : "drop-shadow-lg"
-      }`}
-    >
-      <motion.svg viewBox="0 0 100 60" className={`${isShadow ? "w-16 h-10" : "w-24 h-16"}`}>
+    <div className={`relative ${isShadow ? "opacity-25 blur-[2px] grayscale brightness-0" : "drop-shadow-lg"}`}>
+      <motion.svg viewBox="0 0 100 64" className={`${isShadow ? "w-16 h-10" : "w-24 h-16"}`}>
         <defs>
-          <linearGradient id={`${uid.current}-body`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={isHunter ? "#ffedd5" : "#ffffff"} />
-            <stop offset="100%" stopColor={isHunter ? "#fdba74" : "#cbd5e1"} />
+          <linearGradient id={`${u}-body`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={isHunter ? "#fff7ed" : "#ffffff"} />
+            <stop offset="100%" stopColor={isHunter ? "#fdba74" : "#c3cede"} />
           </linearGradient>
-          <linearGradient id={`${uid.current}-wing`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={isHunter ? "#fed7aa" : "#f1f5f9"} />
-            <stop offset="100%" stopColor={isHunter ? "#f59e0b" : "#94a3b8"} />
+          <linearGradient id={`${u}-wing`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={isHunter ? "#fed7aa" : "#eef2f7"} />
+            <stop offset="100%" stopColor={isHunter ? "#ea9d3a" : "#8a9bb0"} />
           </linearGradient>
         </defs>
-        {/* Tail feathers */}
-        <path d="M30 30 L18 36 L22 30 L18 24 Z" fill={isShadow ? "black" : `url(#${uid.current}-wing)`} stroke={stroke} strokeWidth="1" strokeLinejoin="round" />
+
+        {/* Tail */}
+        <path d="M28 32 L14 39 L20 32 L14 25 Z" fill={wingFill} stroke={stroke} strokeWidth="1" strokeLinejoin="round" />
+
         {/* Body */}
-        <path d="M26 30 Q46 18 70 28 Q52 42 30 33 Z" fill={isShadow ? "black" : `url(#${uid.current}-body)`} stroke={stroke} strokeWidth="1.3" />
-        {/* Left Wing */}
+        <path d="M24 32 Q46 18 72 30 Q54 44 28 36 Z" fill={bodyFill} stroke={stroke} strokeWidth="1.4" />
+        {/* Belly shading */}
+        {!isShadow && <path d="M30 34 Q46 40 66 33 Q52 42 32 37 Z" fill="#000" opacity="0.06" />}
+
+        {/* Far wing (behind) */}
         <motion.path
-          d="M50 26 Q30 0 8 18 Q30 14 50 26"
-          fill={isShadow ? "black" : `url(#${uid.current}-wing)`}
-          stroke={stroke}
-          strokeWidth="1.2"
-          animate={{ rotateX: [0, 60, 0], y: [0, 5, 0] }}
-          transition={{ duration: 0.3, repeat: Infinity, ease: "easeInOut" }}
-          style={{ originY: "26px", originX: "50px" }}
+          d="M52 27 Q40 6 22 12 Q34 16 42 24 Q30 22 20 26 Q38 30 52 27"
+          fill={wingFill} stroke={stroke} strokeWidth="1.2"
+          {...flap}
+          style={{ originY: "27px", originX: "52px", opacity: 0.85 }}
         />
-        {/* Right Wing */}
+        {/* Near wing (front) */}
         <motion.path
-          d="M50 26 Q70 0 92 18 Q70 14 50 26"
-          fill={isShadow ? "black" : `url(#${uid.current}-wing)`}
-          stroke={stroke}
-          strokeWidth="1.2"
-          animate={{ rotateX: [0, 60, 0], y: [0, 5, 0] }}
-          transition={{ duration: 0.3, repeat: Infinity, ease: "easeInOut" }}
-          style={{ originY: "26px", originX: "50px" }}
+          d="M50 27 Q66 4 86 14 Q72 18 62 26 Q76 24 88 30 Q68 32 50 27"
+          fill={wingFill} stroke={stroke} strokeWidth="1.3"
+          {...flap}
+          style={{ originY: "27px", originX: "50px" }}
         />
+
         {/* Head */}
-        <circle cx="72" cy="27" r="6" fill={isShadow ? "black" : `url(#${uid.current}-body)`} stroke={stroke} strokeWidth="1.2" />
+        <circle cx="74" cy="29" r="6.5" fill={bodyFill} stroke={stroke} strokeWidth="1.3" />
         {/* Beak */}
-        <path d="M77 26 L86 28 L77 31 Z" fill={isShadow ? "black" : "#f59e0b"} stroke={isShadow ? "black" : "#b45309"} strokeWidth="0.8" strokeLinejoin="round" />
-        {/* Eye */}
+        <path d="M79 27 L91 30 L79 33 Z" fill={isShadow ? "black" : isHunter ? "#f97316" : "#f2a53b"} stroke={isShadow ? "black" : "#b45309"} strokeWidth="0.8" strokeLinejoin="round" />
+        <path d="M84 30.5 L91 30 L84 31.6 Z" fill={isShadow ? "black" : "#c2410c"} opacity="0.5" />
+
         {!isShadow && (
           <>
-            <circle cx="73.5" cy="25.5" r="1.6" fill="#1c1917" />
-            <circle cx="74" cy="25" r="0.55" fill="white" />
-            {isHunter && (
-              <path d="M69.5 22.5 L77 24.5" stroke="#7c2d12" strokeWidth="1.8" strokeLinecap="round" />
-            )}
+            {/* Eye */}
+            <circle cx="75.5" cy="27.5" r="1.9" fill="#1c1917" />
+            <circle cx="76.2" cy="26.8" r="0.6" fill="white" />
+            {/* Hunter's angry brow */}
+            {isHunter && <path d="M70.5 23.5 L78 26" stroke="#7c2d12" strokeWidth="2" strokeLinecap="round" />}
           </>
         )}
       </motion.svg>
@@ -299,6 +282,29 @@ export const CrabSprite = ({ row, col }: { row: number; col: number }) => {
     }
   }, [row, col]);
 
+  // A raised, snapping claw — mirrored for each side (s = +1 right, -1 left).
+  const Claw = ({ s }: { s: 1 | -1 }) => {
+    const bx = 38 + s * 17; // base near body
+    const cx = 38 + s * 27; // claw centre
+    return (
+      <g>
+        {/* upper arm */}
+        <path d={`M${38 + s * 15} 30 L${bx} 20 L${cx} 16`} fill="none" stroke="#a01818" strokeWidth="4" strokeLinecap="round" />
+        {/* pincer */}
+        <motion.g
+          style={{ transformBox: "fill-box", transformOrigin: s === 1 ? "20% 80%" : "80% 80%" }}
+          animate={{ rotate: [0, s * 14, 0] }}
+          transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut" }}
+        >
+          {/* lower jaw (fixed) */}
+          <path d={`M${cx} 17 Q${cx + s * 9} 15 ${cx + s * 8} 22 Q${cx + s * 5} 25 ${cx} 22 Z`} fill="url(#crab-claw)" stroke="#7f1d1d" strokeWidth="1.8" strokeLinejoin="round" />
+          {/* upper jaw (opens) */}
+          <path d={`M${cx} 15 Q${cx + s * 10} 9 ${cx + s * 9} 16 Q${cx + s * 6} 18 ${cx} 17 Z`} fill="url(#crab-claw)" stroke="#7f1d1d" strokeWidth="1.8" strokeLinejoin="round" />
+        </motion.g>
+      </g>
+    );
+  };
+
   return (
     <div className="relative w-full h-full flex items-center justify-center">
       <div className="absolute bottom-2.5 w-12 h-3 bg-black/25 rounded-full blur-md" />
@@ -309,54 +315,52 @@ export const CrabSprite = ({ row, col }: { row: number; col: number }) => {
         transition={{ duration: 0.2, repeat: isMoving ? Infinity : 0 }}
       >
         <defs>
-          <radialGradient id="crab-body" cx="40%" cy="30%" r="80%">
-            <stop offset="0%" stopColor="#ff8a7a" />
-            <stop offset="55%" stopColor="#ef4444" />
-            <stop offset="100%" stopColor="#b91c1c" />
+          <radialGradient id="crab-body" cx="40%" cy="28%" r="82%">
+            <stop offset="0%" stopColor="#ff9385" />
+            <stop offset="52%" stopColor="#ef4444" />
+            <stop offset="100%" stopColor="#a91717" />
           </radialGradient>
-          <radialGradient id="crab-claw" cx="40%" cy="35%" r="80%">
-            <stop offset="0%" stopColor="#ff7b6b" />
-            <stop offset="100%" stopColor="#c62b2b" />
+          <radialGradient id="crab-claw" cx="40%" cy="30%" r="85%">
+            <stop offset="0%" stopColor="#ff8574" />
+            <stop offset="100%" stopColor="#bd2626" />
           </radialGradient>
         </defs>
 
-        {/* Legs */}
+        {/* Skittering legs */}
         {[0, 1, 2].map((i) => (
-          <motion.g key={i} style={svgFx} animate={isMoving ? { rotate: [-9, 9, -9], transition: { duration: 0.12, repeat: Infinity, delay: i * 0.03 } } : {}}>
-            <path d={`M22 ${37 + i * 5} Q12 ${39 + i * 6} 6 ${34 + i * 7}`} fill="none" stroke="#b91c1c" strokeWidth="2.6" strokeLinecap="round" />
-            <path d={`M54 ${37 + i * 5} Q64 ${39 + i * 6} 70 ${34 + i * 7}`} fill="none" stroke="#b91c1c" strokeWidth="2.6" strokeLinecap="round" />
+          <motion.g key={i} style={svgFx} animate={isMoving ? { rotate: [-8, 8, -8], transition: { duration: 0.12, repeat: Infinity, delay: i * 0.03 } } : {}}>
+            <path d={`M24 ${38 + i * 4} Q13 ${41 + i * 6} 7 ${36 + i * 7} L5 ${40 + i * 7}`} fill="none" stroke="#a01818" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+            <path d={`M52 ${38 + i * 4} Q63 ${41 + i * 6} 69 ${36 + i * 7} L71 ${40 + i * 7}`} fill="none" stroke="#a01818" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
           </motion.g>
         ))}
 
         {/* Claws */}
-        <motion.g style={{ transformBox: "fill-box", transformOrigin: "80% 80%" }} animate={{ rotate: [0, -16, 0] }} transition={{ duration: 0.45, repeat: Infinity }}>
-          <path d="M20 22 Q6 12 8 24 Q9 32 20 30 Z" fill="url(#crab-claw)" stroke="#7f1d1d" strokeWidth="2" strokeLinejoin="round" />
-          <path d="M10 17 L14 22" stroke="#7f1d1d" strokeWidth="2" strokeLinecap="round" />
-        </motion.g>
-        <motion.g style={{ transformBox: "fill-box", transformOrigin: "20% 80%" }} animate={{ rotate: [0, 16, 0] }} transition={{ duration: 0.45, repeat: Infinity }}>
-          <path d="M56 22 Q70 12 68 24 Q67 32 56 30 Z" fill="url(#crab-claw)" stroke="#7f1d1d" strokeWidth="2" strokeLinejoin="round" />
-          <path d="M66 17 L62 22" stroke="#7f1d1d" strokeWidth="2" strokeLinecap="round" />
-        </motion.g>
+        <Claw s={-1} />
+        <Claw s={1} />
 
         {/* Eye stalks */}
-        <path d="M31 22 L28 13" stroke="#7f1d1d" strokeWidth="2.2" strokeLinecap="round" />
-        <path d="M45 22 L48 13" stroke="#7f1d1d" strokeWidth="2.2" strokeLinecap="round" />
-        <circle cx="28" cy="11" r="4" fill="white" stroke="#7f1d1d" strokeWidth="1.6" />
-        <circle cx="48" cy="11" r="4" fill="white" stroke="#7f1d1d" strokeWidth="1.6" />
-        <circle cx="28.8" cy="11.5" r="1.7" fill="#1c1917" />
-        <circle cx="47.2" cy="11.5" r="1.7" fill="#1c1917" />
-        <circle cx="29.3" cy="10.8" r="0.6" fill="white" />
-        <circle cx="46.7" cy="10.8" r="0.6" fill="white" />
+        <path d="M32 24 L30 13" stroke="#a01818" strokeWidth="2.4" strokeLinecap="round" />
+        <path d="M44 24 L46 13" stroke="#a01818" strokeWidth="2.4" strokeLinecap="round" />
+        <circle cx="30" cy="11" r="4.2" fill="white" stroke="#7f1d1d" strokeWidth="1.5" />
+        <circle cx="46" cy="11" r="4.2" fill="white" stroke="#7f1d1d" strokeWidth="1.5" />
+        <circle cx="30.7" cy="11.6" r="1.9" fill="#1c1917" />
+        <circle cx="45.3" cy="11.6" r="1.9" fill="#1c1917" />
+        <circle cx="31.4" cy="10.7" r="0.7" fill="white" />
+        <circle cx="46" cy="10.7" r="0.7" fill="white" />
 
         {/* Body */}
-        <ellipse cx="38" cy="34" rx="18" ry="13" fill="url(#crab-body)" stroke="#7f1d1d" strokeWidth="2.4" />
-        {/* Shell texture */}
-        <path d="M27 30 Q38 24 49 30" fill="none" stroke="#7f1d1d" strokeWidth="1.2" opacity="0.4" />
-        <path d="M26 36 Q38 31 50 36" fill="none" stroke="#7f1d1d" strokeWidth="1.2" opacity="0.3" />
+        <ellipse cx="38" cy="35" rx="19" ry="13.5" fill="url(#crab-body)" stroke="#7f1d1d" strokeWidth="2.4" />
+        {/* Shell ridges */}
+        <path d="M26 31 Q38 25 50 31" fill="none" stroke="#7f1d1d" strokeWidth="1.2" opacity="0.4" />
+        <path d="M24 37 Q38 32 52 37" fill="none" stroke="#7f1d1d" strokeWidth="1.2" opacity="0.28" />
+        {/* Little bumps */}
+        <circle cx="27" cy="34" r="1.1" fill="#7f1d1d" opacity="0.35" />
+        <circle cx="49" cy="34" r="1.1" fill="#7f1d1d" opacity="0.35" />
         {/* Highlight */}
-        <ellipse cx="31" cy="28.5" rx="5.5" ry="2.8" fill="white" opacity="0.35" transform="rotate(-18 31 28.5)" />
-        {/* Smile */}
-        <path d="M34 40 Q38 43 42 40" fill="none" stroke="#7f1d1d" strokeWidth="1.6" strokeLinecap="round" />
+        <ellipse cx="31" cy="29.5" rx="6" ry="3" fill="white" opacity="0.4" transform="rotate(-16 31 29.5)" />
+        {/* Toothy grin */}
+        <path d="M32 40 Q38 45 44 40" fill="none" stroke="#7f1d1d" strokeWidth="1.6" strokeLinecap="round" />
+        <path d="M35 41.5 L36 43.2 L37 41.5 M39 41.5 L40 43.2 L41 41.5" fill="none" stroke="#7f1d1d" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
       </motion.svg>
     </div>
   );
@@ -365,77 +369,74 @@ export const CrabSprite = ({ row, col }: { row: number; col: number }) => {
 export const SnakeSprite = () => {
   return (
     <div className="relative w-full h-full flex items-center justify-center">
-      <div className="absolute bottom-3 w-12 h-2.5 bg-black/20 rounded-full blur-md" />
+      <div className="absolute bottom-2.5 w-14 h-3 bg-black/25 rounded-full blur-md" />
       <motion.svg
-        viewBox="0 0 80 44"
-        className="w-16 h-9 drop-shadow-sm"
-        animate={{ x: [-2, 2, -2] }}
-        transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+        viewBox="0 0 68 60"
+        className="w-16 h-14 drop-shadow-sm"
+        animate={{ rotate: [-2, 2, -2] }}
+        transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+        style={{ transformOrigin: "34px 50px" }}
       >
         <defs>
           <linearGradient id="snake-body" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#bef264" />
-            <stop offset="55%" stopColor="#84cc16" />
+            <stop offset="0%" stopColor="#c6f06a" />
+            <stop offset="55%" stopColor="#7fc428" />
             <stop offset="100%" stopColor="#4d7c0f" />
           </linearGradient>
-          <radialGradient id="snake-head" cx="40%" cy="30%" r="80%">
-            <stop offset="0%" stopColor="#d9f99d" />
-            <stop offset="100%" stopColor="#65a30d" />
+          <radialGradient id="snake-head" cx="42%" cy="30%" r="82%">
+            <stop offset="0%" stopColor="#dcf79e" />
+            <stop offset="100%" stopColor="#5f9d16" />
           </radialGradient>
         </defs>
 
-        {/* Undulating body */}
-        <motion.g
-          animate={{ y: [-1.5, 1.5, -1.5] }}
-          transition={{ duration: 0.8, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <path
-            d="M6 26 Q14 14 24 24 Q34 34 44 24 Q52 16 58 22"
-            fill="none"
-            stroke="#365314"
-            strokeWidth="12"
-            strokeLinecap="round"
-          />
-          <path
-            d="M6 26 Q14 14 24 24 Q34 34 44 24 Q52 16 58 22"
-            fill="none"
-            stroke="url(#snake-body)"
-            strokeWidth="9"
-            strokeLinecap="round"
-          />
-          {/* Diamond back pattern */}
-          <g fill="#365314" opacity="0.45">
-            <path d="M13 20 l3 -2.5 3 2.5 -3 2.5 Z" />
-            <path d="M26 25 l3 -2.5 3 2.5 -3 2.5 Z" />
-            <path d="M40 25 l3 -2.5 3 2.5 -3 2.5 Z" />
+        {/* Coiled body — a plump resting coil */}
+        <g>
+          <ellipse cx="34" cy="49" rx="24" ry="10.8" fill="#3f6212" />
+          <ellipse cx="34" cy="47.8" rx="24" ry="10.8" fill="url(#snake-body)" />
+          {/* Seam implying the loop wraps over itself */}
+          <path d="M13 49 Q26 40 40 45 Q50 48.5 54 43" fill="none" stroke="#3f6212" strokeWidth="1.6" opacity="0.5" strokeLinecap="round" />
+          {/* Diamond scales */}
+          <g fill="#3f6212" opacity="0.4">
+            <path d="M22 47 l2.5 -2 2.5 2 -2.5 2 Z" />
+            <path d="M33 50 l2.5 -2 2.5 2 -2.5 2 Z" />
+            <path d="M45 47 l2.5 -2 2.5 2 -2.5 2 Z" />
           </g>
-          {/* Tail tip */}
-          <path d="M7 27 Q2 29 1 25" fill="none" stroke="#4d7c0f" strokeWidth="4" strokeLinecap="round" />
-        </motion.g>
+          {/* Highlight */}
+          <ellipse cx="24" cy="43.5" rx="8" ry="3" fill="white" opacity="0.18" transform="rotate(-8 24 43.5)" />
+          {/* Tail tip curling up over the coil */}
+          <path d="M55 45 Q63 43 62 36" fill="none" stroke="#4d7c0f" strokeWidth="4.5" strokeLinecap="round" />
+        </g>
 
-        {/* Head */}
+        {/* Reared neck + head */}
         <motion.g
-          animate={{ y: [1.5, -1.5, 1.5] }}
-          transition={{ duration: 0.8, repeat: Infinity, ease: "easeInOut" }}
+          animate={{ rotate: [-3, 3, -3] }}
+          transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+          style={{ transformOrigin: "34px 42px" }}
         >
-          <ellipse cx="63" cy="21" rx="10" ry="8" fill="url(#snake-head)" stroke="#365314" strokeWidth="2.2" />
-          {/* Eyes */}
-          <circle cx="61" cy="17.5" r="2.6" fill="#fefce8" stroke="#365314" strokeWidth="0.8" />
-          <circle cx="67" cy="17.5" r="2.6" fill="#fefce8" stroke="#365314" strokeWidth="0.8" />
-          <ellipse cx="61.3" cy="17.8" rx="1" ry="1.7" fill="#1c1917" />
-          <ellipse cx="67.3" cy="17.8" rx="1" ry="1.7" fill="#1c1917" />
-          <circle cx="61.7" cy="17" r="0.45" fill="white" />
-          <circle cx="67.7" cy="17" r="0.45" fill="white" />
+          {/* Neck */}
+          <path d="M34 44 Q28 30 34 22" fill="none" stroke="#3f6212" strokeWidth="12" strokeLinecap="round" />
+          <path d="M34 44 Q28 30 34 22" fill="none" stroke="url(#snake-body)" strokeWidth="9" strokeLinecap="round" />
+          {/* Head (front-facing, slightly hooded) */}
+          <path d="M23 18 Q23 6 34 6 Q45 6 45 18 Q45 27 34 28 Q23 27 23 18 Z" fill="url(#snake-head)" stroke="#3f6212" strokeWidth="2.2" strokeLinejoin="round" />
+          {/* Brow ridges (a little menace) */}
+          <path d="M25 12 Q28 10 31 12 M43 12 Q40 10 37 12" fill="none" stroke="#3f6212" strokeWidth="1.6" strokeLinecap="round" />
+          {/* Eyes with slit pupils */}
+          <circle cx="29" cy="15" r="3.4" fill="#fdf6b8" stroke="#3f6212" strokeWidth="0.9" />
+          <circle cx="39" cy="15" r="3.4" fill="#fdf6b8" stroke="#3f6212" strokeWidth="0.9" />
+          <ellipse cx="29.3" cy="15.3" rx="1" ry="2.4" fill="#1c1917" />
+          <ellipse cx="39.3" cy="15.3" rx="1" ry="2.4" fill="#1c1917" />
+          <circle cx="28.2" cy="13.8" r="0.7" fill="white" />
+          <circle cx="38.2" cy="13.8" r="0.7" fill="white" />
           {/* Nostrils */}
-          <circle cx="68" cy="22.5" r="0.6" fill="#365314" />
-          <circle cx="70.5" cy="21.5" r="0.6" fill="#365314" />
-          {/* Forked tongue */}
+          <circle cx="32.5" cy="23.5" r="0.7" fill="#3f6212" />
+          <circle cx="35.5" cy="23.5" r="0.7" fill="#3f6212" />
+          {/* Flicking forked tongue */}
           <motion.g
-            style={{ transformBox: "fill-box", transformOrigin: "0% 50%" }}
-            animate={{ scaleX: [0, 1, 1, 0] }}
-            transition={{ duration: 0.7, repeat: Infinity, repeatDelay: 0.9 }}
+            style={{ transformBox: "fill-box", transformOrigin: "50% 0%" }}
+            animate={{ scaleY: [0, 1, 1, 0] }}
+            transition={{ duration: 0.7, repeat: Infinity, repeatDelay: 1 }}
           >
-            <path d="M72 23 Q77 24 79 22 M79 22 L78 20 M79 22 L80 24" fill="none" stroke="#e11d48" strokeWidth="1.4" strokeLinecap="round" />
+            <path d="M34 26 L34 33 M34 33 L31.5 36 M34 33 L36.5 36" fill="none" stroke="#e11d48" strokeWidth="1.4" strokeLinecap="round" />
           </motion.g>
         </motion.g>
       </motion.svg>
@@ -451,72 +452,63 @@ export const OctopusSprite = () => {
         viewBox="0 0 64 64"
         className="w-13 h-13 drop-shadow-sm"
         animate={{ y: [-2, 2, -2] }}
-        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
       >
         <defs>
-          <radialGradient id="octo-head" cx="40%" cy="28%" r="80%">
-            <stop offset="0%" stopColor="#d8b4fe" />
-            <stop offset="55%" stopColor="#a855f7" />
-            <stop offset="100%" stopColor="#7e22ce" />
+          <radialGradient id="octo-head" cx="40%" cy="26%" r="82%">
+            <stop offset="0%" stopColor="#e3c4ff" />
+            <stop offset="52%" stopColor="#a855f7" />
+            <stop offset="100%" stopColor="#7318b8" />
           </radialGradient>
         </defs>
 
-        {/* Tentacles */}
-        {[0, 1, 2, 3, 4].map((i) => {
-          const x = 14 + i * 9;
+        {/* Tentacles — curl left and right, suckers underneath */}
+        {[0, 1, 2, 3, 4, 5].map((i) => {
+          const x = 12 + i * 8;
           const dir = i % 2 === 0 ? 1 : -1;
+          const curl = (i - 2.5) * 2;
           return (
             <motion.g
               key={i}
               style={{ transformBox: "fill-box", transformOrigin: "50% 0%" }}
-              animate={{ rotate: [dir * -10, dir * 10, dir * -10] }}
-              transition={{ duration: 1 + i * 0.12, repeat: Infinity, ease: "easeInOut" }}
+              animate={{ rotate: [dir * -9, dir * 9, dir * -9] }}
+              transition={{ duration: 1.4 + i * 0.14, repeat: Infinity, ease: "easeInOut" }}
             >
-              <path
-                d={`M${x} 40 Q${x + dir * 4} 50 ${x - dir * 3} 58`}
-                fill="none"
-                stroke="#7e22ce"
-                strokeWidth="6"
-                strokeLinecap="round"
-              />
-              <path
-                d={`M${x} 40 Q${x + dir * 4} 50 ${x - dir * 3} 58`}
-                fill="none"
-                stroke="#a855f7"
-                strokeWidth="3.4"
-                strokeLinecap="round"
-              />
-              {/* Suckers */}
-              <circle cx={x + dir * 2.5} cy={49} r="1.1" fill="#f3e8ff" opacity="0.8" />
-              <circle cx={x - dir * 1} cy={55} r="1" fill="#f3e8ff" opacity="0.7" />
+              <path d={`M${x} 40 Q${x + curl} 52 ${x - dir * 5} 59`} fill="none" stroke="#6a17ac" strokeWidth="6.5" strokeLinecap="round" />
+              <path d={`M${x} 40 Q${x + curl} 52 ${x - dir * 5} 59`} fill="none" stroke="#a855f7" strokeWidth="3.6" strokeLinecap="round" />
+              <circle cx={x + curl * 0.5} cy={50} r="1.1" fill="#f3e8ff" opacity="0.8" />
+              <circle cx={x - dir * 3} cy={56} r="1" fill="#f3e8ff" opacity="0.7" />
             </motion.g>
           );
         })}
 
-        {/* Head dome */}
+        {/* Mantle / head dome */}
         <path
-          d="M12 38 Q10 12 32 10 Q54 12 52 38 Q46 45 32 45 Q18 45 12 38 Z"
+          d="M11 39 Q9 10 32 9 Q55 10 53 39 Q47 46 32 46 Q17 46 11 39 Z"
           fill="url(#octo-head)"
-          stroke="#581c87"
+          stroke="#4a1178"
           strokeWidth="2.4"
           strokeLinejoin="round"
         />
         {/* Spots */}
-        <circle cx="20" cy="20" r="1.6" fill="#e9d5ff" opacity="0.6" />
-        <circle cx="43" cy="17" r="1.3" fill="#e9d5ff" opacity="0.6" />
-        <circle cx="47" cy="26" r="1.1" fill="#e9d5ff" opacity="0.5" />
-        {/* Highlight */}
-        <ellipse cx="24" cy="17" rx="6" ry="3.4" fill="white" opacity="0.4" transform="rotate(-22 24 17)" />
+        <circle cx="19" cy="19" r="1.7" fill="#eeddff" opacity="0.55" />
+        <circle cx="44" cy="16" r="1.4" fill="#eeddff" opacity="0.55" />
+        <circle cx="48" cy="25" r="1.1" fill="#eeddff" opacity="0.45" />
+        {/* Gloss */}
+        <ellipse cx="23" cy="17" rx="6.5" ry="3.6" fill="white" opacity="0.4" transform="rotate(-22 23 17)" />
 
-        {/* Eyes */}
-        <circle cx="25" cy="30" r="5" fill="white" stroke="#581c87" strokeWidth="1.4" />
-        <circle cx="39" cy="30" r="5" fill="white" stroke="#581c87" strokeWidth="1.4" />
-        <circle cx="26" cy="31" r="2.4" fill="#1c1917" />
-        <circle cx="38" cy="31" r="2.4" fill="#1c1917" />
-        <circle cx="26.8" cy="30.2" r="0.8" fill="white" />
-        <circle cx="38.8" cy="30.2" r="0.8" fill="white" />
-        {/* Frown */}
-        <path d="M29 39.5 Q32 37.5 35 39.5" fill="none" stroke="#581c87" strokeWidth="1.6" strokeLinecap="round" />
+        {/* Big eyes with heavy lids (sly look) */}
+        <circle cx="24" cy="29" r="5.4" fill="white" stroke="#4a1178" strokeWidth="1.4" />
+        <circle cx="40" cy="29" r="5.4" fill="white" stroke="#4a1178" strokeWidth="1.4" />
+        <circle cx="25" cy="30.3" r="2.7" fill="#1c1917" />
+        <circle cx="39" cy="30.3" r="2.7" fill="#1c1917" />
+        <circle cx="26" cy="29.3" r="0.9" fill="white" />
+        <circle cx="40" cy="29.3" r="0.9" fill="white" />
+        {/* Heavy lids */}
+        <path d="M18.6 26.5 Q24 24 29.4 26.5" fill="none" stroke="#4a1178" strokeWidth="1.6" strokeLinecap="round" />
+        <path d="M34.6 26.5 Q40 24 45.4 26.5" fill="none" stroke="#4a1178" strokeWidth="1.6" strokeLinecap="round" />
+        {/* Smug little smile */}
+        <path d="M28 39 Q32 42.5 36 39" fill="none" stroke="#4a1178" strokeWidth="1.7" strokeLinecap="round" />
       </motion.svg>
     </div>
   );
@@ -527,31 +519,34 @@ export const DecoySprite = ({ turnsLeft }: { turnsLeft: number }) => {
     <div className="relative w-full h-full flex items-center justify-center">
       <motion.div
         initial={{ scale: 0, y: -30 }}
-        animate={{ scale: 1, y: 0, rotate: [-3, 3, -3] }}
+        animate={{ scale: 1, y: 0, rotate: [-4, 4, -4] }}
         transition={{ rotate: { duration: 2, repeat: Infinity } }}
-        className="relative w-10 h-12"
+        className="relative w-11 h-12"
       >
-        <svg viewBox="0 0 40 48" className="w-full h-full drop-shadow-sm">
+        {/* A flat cardboard cut-out of a hatchling — clearly a fake lure */}
+        <svg viewBox="0 0 44 48" className="w-full h-full drop-shadow-sm">
           <defs>
-            <radialGradient id="decoy-shell" cx="40%" cy="30%" r="85%">
-              <stop offset="0%" stopColor="#fefce8" />
-              <stop offset="100%" stopColor="#fde047" />
-            </radialGradient>
+            <linearGradient id="decoy-card" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#f3dca6" />
+              <stop offset="100%" stopColor="#e0be7c" />
+            </linearGradient>
           </defs>
-          <path
-            d="M20 2 Q36 14 35 30 Q34 45 20 46 Q6 45 5 30 Q4 14 20 2 Z"
-            fill="url(#decoy-shell)"
-            stroke="#d97706"
-            strokeWidth="2"
-            strokeDasharray="5 3"
-            strokeLinejoin="round"
-          />
-          {/* Googly disguise eyes + moustache */}
-          <circle cx="14" cy="22" r="4" fill="white" stroke="#92400e" strokeWidth="1.2" />
-          <circle cx="26" cy="22" r="4" fill="white" stroke="#92400e" strokeWidth="1.2" />
-          <circle cx="15" cy="23" r="1.8" fill="#1c1917" />
-          <circle cx="25" cy="23" r="1.8" fill="#1c1917" />
-          <path d="M12 30 Q16 34 20 31 Q24 34 28 30 Q25 36 20 33 Q15 36 12 30 Z" fill="#78350f" />
+          {/* stick it stands on */}
+          <rect x="21" y="34" width="2" height="13" rx="1" fill="#a97b3c" />
+          {/* head cut-out */}
+          <circle cx="22" cy="13" r="8.5" fill="url(#decoy-card)" stroke="#b07d2e" strokeWidth="1.8" strokeDasharray="4 2.5" />
+          {/* shell cut-out */}
+          <path d="M9 32 Q9 20 22 20 Q35 20 35 32 Q35 39 22 39 Q9 39 9 32 Z"
+            fill="url(#decoy-card)" stroke="#b07d2e" strokeWidth="1.8" strokeDasharray="4 2.5" strokeLinejoin="round" />
+          {/* googly disguise eyes */}
+          <circle cx="18" cy="12" r="3.2" fill="white" stroke="#8a5a1c" strokeWidth="1" />
+          <circle cx="26" cy="12" r="3.2" fill="white" stroke="#8a5a1c" strokeWidth="1" />
+          <circle cx="18.8" cy="12.8" r="1.5" fill="#1c1917" />
+          <circle cx="25.2" cy="12.8" r="1.5" fill="#1c1917" />
+          {/* joke moustache */}
+          <path d="M15 17 Q18.5 20 22 17.5 Q25.5 20 29 17 Q26 22 22 19.5 Q18 22 15 17 Z" fill="#7a4a17" />
+          {/* scribbled scute lines */}
+          <path d="M22 22 L22 37 M14 30 Q22 27 30 30" fill="none" stroke="#b07d2e" strokeWidth="1" opacity="0.5" strokeLinecap="round" />
         </svg>
         <div className="absolute -top-2 -right-2 w-5 h-5 bg-[#d97706] text-white text-[10px] font-black rounded-full flex items-center justify-center border border-white shadow">
           {turnsLeft}
